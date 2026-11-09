@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" width="80" height="80">
+  <!-- Sacola de minério (cheia) -->
+  <g stroke="#222" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">
+    <!-- Minério aparecendo na boca -->
+    <path d="M26 22 L32 12 L40 18 Z" fill="#8a8f98"/>
+    <path d="M38 16 L46 8 L52 18 Z" fill="#f7c21b"/>
+    <!-- Corpo da sacola -->
+    <path d="M24 24 Q10 40 12 58 Q14 74 40 74 Q66 74 68 58 Q70 40 56 24 Z" fill="#c9a26b"/>
+    <!-- Amarração -->
+    <path d="M22 24 Q40 30 58 24" fill="none" stroke-width="5"/>
+    <!-- Remendo -->
+    <rect x="44" y="46" width="12" height="12" rx="2" fill="#a8824f" stroke-width="3"/>
+    <!-- Dobras -->
+    <path d="M24 50 Q28 60 26 66" fill="none" stroke="#8c6a3c" stroke-width="3"/>
+  </g>
+</svg>

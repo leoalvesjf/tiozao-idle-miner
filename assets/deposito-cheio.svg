@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 90 70" width="90" height="70">
+  <!-- Depósito da superfície (caixote): CHEIO de minério -->
+  <g stroke="#222" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">
+    <!-- Monte de minério -->
+    <path d="M10 30 Q22 6 42 12 Q60 2 80 30 Z" fill="#8a8f98"/>
+    <path d="M26 20 L34 14 L40 22 L32 26 Z" fill="#6c717a" stroke-width="3"/>
+    <path d="M44 14 L52 10 L56 18 L48 22 Z" fill="#f7c21b" stroke-width="3"/>
+    <path d="M62 20 L68 16 L72 24 L66 26 Z" fill="#f7c21b" stroke-width="3"/>
+    <!-- Frente do caixote -->
+    <rect x="6" y="26" width="78" height="40" fill="#b07a3e"/>
+    <line x1="6" y1="40" x2="84" y2="40" stroke-width="3"/>
+    <line x1="6" y1="53" x2="84" y2="53" stroke-width="3"/>
+    <!-- Cantoneiras -->
+    <rect x="4" y="22" width="10" height="46" rx="2" fill="#8c5a2b"/>
+    <rect x="76" y="22" width="10" height="46" rx="2" fill="#8c5a2b"/>
+  </g>
+</svg>

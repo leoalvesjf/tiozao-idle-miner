@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 90 70" width="90" height="70">
+  <!-- Depósito da superfície (caixote): VAZIO -->
+  <g stroke="#222" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">
+    <!-- Fundo interno -->
+    <rect x="10" y="20" width="70" height="10" fill="#6b4422"/>
+    <!-- Frente do caixote -->
+    <rect x="6" y="26" width="78" height="40" fill="#b07a3e"/>
+    <line x1="6" y1="40" x2="84" y2="40" stroke-width="3"/>
+    <line x1="6" y1="53" x2="84" y2="53" stroke-width="3"/>
+    <!-- Cantoneiras -->
+    <rect x="4" y="22" width="10" height="46" rx="2" fill="#8c5a2b"/>
+    <rect x="76" y="22" width="10" height="46" rx="2" fill="#8c5a2b"/>
+  </g>
+</svg>

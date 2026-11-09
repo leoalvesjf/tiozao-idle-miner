@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 180" width="200" height="180">
+  <!-- Mineiro de PERFIL: ANDANDO com a sacola VAZIA (volta), quadro 1 -->
+  <g stroke="#222" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">
+
+    <!-- Sacola vazia (murcha, pendurada nas costas) -->
+    <g transform="translate(-6 60)">
+      <path d="M40 28 Q30 40 34 58 Q38 68 50 64 Q58 56 56 40 Q54 30 52 28 Z" fill="#c9a26b"/>
+      <path d="M38 28 Q46 31 54 28" fill="none" stroke-width="5"/>
+      <path d="M42 44 Q46 50 44 58" fill="none" stroke="#8c6a3c" stroke-width="3"/>
+    </g>
+
+    <!-- Perna de trás (recuada) -->
+    <g transform="rotate(22 72 128)">
+      <rect x="63" y="126" width="18" height="34" fill="#2559a8"/>
+      <rect x="59" y="154" width="32" height="16" rx="5" fill="#47301a"/>
+    </g>
+    <!-- Perna da frente (avançada) -->
+    <g transform="rotate(-22 72 128)">
+      <rect x="63" y="126" width="18" height="34" fill="#2f6fd1"/>
+      <rect x="59" y="154" width="32" height="16" rx="5" fill="#5a3a1e"/>
+    </g>
+
+    <!-- Camisa -->
+    <rect x="50" y="86" width="46" height="52" rx="12" fill="#e8d5b0"/>
+    <!-- Macacão -->
+    <path d="M50 112 H96 V132 Q96 142 86 142 H60 Q50 142 50 132 Z" fill="#2f6fd1"/>
+    <rect x="80" y="96" width="16" height="18" rx="3" fill="#2f6fd1"/>
+    <circle cx="89" cy="104" r="3" fill="#f7c21b" stroke-width="2"/>
+
+    <!-- Alça da sacola cruzando o peito -->
+    <path d="M56 88 L92 128" fill="none" stroke="#222" stroke-width="10"/>
+    <path d="M56 88 L92 128" fill="none" stroke="#8c6a3c" stroke-width="5"/>
+
+    <!-- Cabeça e orelha -->
+    <circle cx="71" cy="62" r="24" fill="#f5c38b"/>
+    <circle cx="63" cy="65" r="6" fill="#f5c38b" stroke-width="3"/>
+    <!-- Olho -->
+    <circle cx="83" cy="58" r="3.5" fill="#222" stroke="none"/>
+    <!-- Bigode -->
+    <path d="M72 74 Q84 66 98 73 Q102 80 93 80 Q85 76 79 80 Q68 81 72 74 Z" fill="#6b3e1f"/>
+    <!-- Nariz -->
+    <circle cx="95" cy="66" r="6" fill="#f5c38b"/>
+
+    <!-- Capacete -->
+    <path d="M44 54 A27 27 0 0 1 98 54 Z" fill="#f7c21b"/>
+    <rect x="42" y="50" width="66" height="8" rx="4" fill="#f7c21b"/>
+    <!-- Lanterna -->
+    <rect x="92" y="36" width="11" height="13" rx="3" fill="#d9d9d9"/>
+    <circle cx="103" cy="42.5" r="4" fill="#fff6a0" stroke-width="2.5"/>
+
+    <!-- Braço balançando para trás -->
+    <path d="M74 96 L60 122" stroke="#222" stroke-width="16"/>
+    <path d="M74 96 L60 122" stroke="#f5c38b" stroke-width="9"/>
+    <circle cx="60" cy="122" r="8" fill="#f5c38b"/>
+  </g>
+</svg>

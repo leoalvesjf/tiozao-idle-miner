@@ -2,23 +2,60 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Idle Miner</title>
+  <title>Tiozão Idle Miner</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <!-- Caixa do jogo: 960 x 540 -->
+  <!-- Janela do jogo: 960 x 540 -->
   <div id="jogo">
-    <img id="fundo" src="assets/fundo-terra.svg" alt="Fundo da mina">
-    <img id="mineiro" src="assets/mineiro-parado.svg" alt="Mineiro">
 
-    <!-- Painel do dinheiro -->
+    <!-- MUNDO: superfície + andares. Fica mais alto que a janela e rola na vertical. -->
+    <div id="mundo">
+      <img id="fundo-superficie" src="assets/fundo-superficie.svg" alt="">
+
+      <!-- Andares da mina: criados pelo game.js -->
+      <div id="andares"></div>
+
+      <!-- Vaga do próximo andar (bloqueado): botão "+" para abrir -->
+      <div id="andar-bloqueado">
+        <div class="tunel-fantasma"></div>
+        <button class="botao-mais" id="mais-andar">+</button>
+        <div id="rotulo-andar"></div>
+      </div>
+
+      <!-- Superfície: fábrica, depósito e ajudante -->
+      <img id="fabrica" src="assets/fabrica.svg" alt="Fábrica">
+      <img id="deposito" src="assets/deposito-vazio.svg" alt="Depósito">
+      <div id="balao-deposito" class="balao">0</div>
+      <img id="ajudante" src="assets/ajudante-parado.svg" alt="Ajudante">
+      <img id="gerente-superficie" class="gerente" src="assets/gerente.svg" alt="Gerente da superfície">
+      <button class="botao-mais" id="mais-superficie">+<span class="selo"></span></button>
+
+      <!-- Elevador: cabo + cabine -->
+      <div id="cabo"></div>
+      <img id="elevador" src="assets/elevador-vazio.svg" alt="Elevador">
+      <div id="balao-elevador" class="balao">0</div>
+      <img id="gerente-elevador" class="gerente" src="assets/gerente.svg" alt="Gerente do elevador">
+      <button class="botao-mais" id="mais-elevador">+<span class="selo"></span></button>
+    </div>
+
+    <!-- HUD: fica parado enquanto o mundo rola -->
     <div id="painel-dinheiro">
       <img src="assets/moeda.svg" alt="Moeda">
       <span id="dinheiro">0</span>
     </div>
+    <button id="rolar-cima" class="botao-rolar">▲</button>
+    <button id="rolar-baixo" class="botao-rolar">▼</button>
+    <button id="recomecar" title="Apagar o progresso e recomeçar">↺</button>
 
-    <!-- Botão de upgrade da picareta -->
-    <button id="botao-upgrade">Picareta</button>
+    <!-- Painel de upgrade: abre ao clicar num "+" -->
+    <div id="painel" class="escondido">
+      <div id="painel-cartao">
+        <button id="painel-fechar">✕</button>
+        <h2 id="painel-titulo"></h2>
+        <div id="painel-linhas"></div>
+      </div>
+    </div>
   </div>
 
   <script src="game.js"></script>
