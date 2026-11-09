@@ -29,17 +29,22 @@ const RITMO_GERENTE = 30;        // gerente de andar: um golpe a cada 30 quadros
 function topoAndar(i) { return ALTURA_SUPERFICIE + i * ALTURA_ANDAR; }
 function yCabineNoAndar(i) { return topoAndar(i) + 114; } // piso da cabine no chão do andar
 
-// ===== Upgrades (capacidade sobe somando, preço sobe ×1,5) =====
+// ===== Upgrades =====
+// Picareta e sacola (de cada andar): valor sobe somando, preço ×1,5.
+// Regra da proporção (elevador, depósito, carrinho, velocidade): valor e preço sobem no mesmo ritmo (fator).
 const upgrades = {
   picareta: { nome: "Picareta", nivel: 0, precoBase: 10, valor: function (n) { return n + 1; } },
   sacola:   { nome: "Sacola",   nivel: 0, precoBase: 15, valor: function (n) { return 10 + 5 * n; } },
-  elevador: { nome: "Elevador", nivel: 0, precoBase: 20, valor: function (n) { return 20 + 10 * n; } },
-  deposito: { nome: "Depósito", nivel: 0, precoBase: 20, valor: function (n) { return 30 + 15 * n; } },
-  carrinho: { nome: "Carrinho", nivel: 0, precoBase: 15, valor: function (n) { return 10 + 5 * n; } }
+  elevador: { nome: "Elevador", nivel: 0, precoBase: 20, fator: 1.4, valor: function (n) { return Math.round(20 * 1.4 ** n); } },
+  velocidade: { nome: "Velocidade", nivel: 0, precoBase: 25, fator: 1.4, valor: function (n) { return Math.round(100 * 1.1 ** n); } }, // em %
+  deposito: { nome: "Depósito", nivel: 0, precoBase: 20, fator: 1.4, valor: function (n) { return Math.round(30 * 1.4 ** n); } },
+  carrinho: { nome: "Carrinho", nivel: 0, precoBase: 15, fator: 1.4, valor: function (n) { return Math.round(10 * 1.4 ** n); } }
 };
 
 function valorAtual(id) { return upgrades[id].valor(upgrades[id].nivel); }
-function preco(id) { return Math.floor(upgrades[id].precoBase * 1.5 ** upgrades[id].nivel); }
+function preco(id) { return Math.floor(upgrades[id].precoBase * (upgrades[id].fator || 1.5) ** upgrades[id].nivel); }
+// Velocidade do elevador em pixels por quadro (100% = VEL_ELEVADOR)
+function velElevador() { return VEL_ELEVADOR * valorAtual("velocidade") / 100; }
 
 // Contratar mineiro no andar i: 50 × 2^(mineiros-1) × 5^i
 function precoMineiro(i) { return Math.floor(50 * 2 ** (andares[i].mineiros - 1) * 5 ** i); }
@@ -300,7 +305,7 @@ function moverElevador() {
   const cap = valorAtual("elevador");
 
   if (elev.estado === "descendo") {
-    elev.y = elev.y + VEL_ELEVADOR;
+    elev.y = elev.y + velElevador();
     const yAlvo = yCabineNoAndar(elev.alvo);
     if (elev.y >= yAlvo) {
       elev.y = yAlvo;
@@ -331,7 +336,7 @@ function moverElevador() {
     }
 
   } else if (elev.estado === "subindo") {
-    elev.y = elev.y - VEL_ELEVADOR;
+    elev.y = elev.y - velElevador();
     if (elev.y <= Y_TOPO_ELEVADOR) {
       elev.y = Y_TOPO_ELEVADOR;
       elev.estado = "topo";
@@ -493,7 +498,8 @@ function linhasDoPainel(tipo, i) {
   if (tipo === "elevador") {
     return [
       linhaGerente("elevador", 0, function () { return gerentes.elevador; }, function () { gerentes.elevador = true; }),
-      linhaUpgrade("elevador", "elevador-vazio.svg", " por viagem")
+      linhaUpgrade("elevador", "elevador-vazio.svg", " por viagem"),
+      linhaUpgrade("velocidade", "elevador-cheio.svg", "% de velocidade")
     ];
   }
   if (tipo === "superficie") {
