@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" width="960" height="540">
+  <!-- Fundo da mina (960 x 540) -->
+
+  <!-- Céu -->
+  <rect x="0" y="0" width="960" height="100" fill="#8fd3f4"/>
+  <!-- Nuvens -->
+  <g fill="#ffffff" stroke="#222" stroke-width="4" stroke-linejoin="round">
+    <path d="M120 60 Q120 40 145 42 Q155 24 180 32 Q200 26 205 46 Q225 48 222 62 Z"/>
+    <path d="M700 52 Q700 34 722 36 Q732 20 755 28 Q772 24 776 40 Q794 42 792 54 Z"/>
+  </g>
+
+  <!-- Terra -->
+  <rect x="0" y="100" width="960" height="440" fill="#9b6635"/>
+  <!-- Camadas mais escuras -->
+  <path d="M0 230 Q240 210 480 232 Q720 254 960 226 V290 Q720 316 480 294 Q240 272 0 292 Z" fill="#875528"/>
+  <path d="M0 420 Q260 400 500 424 Q740 446 960 418 V540 H0 Z" fill="#74461f"/>
+
+  <!-- Pedrinhas na terra -->
+  <g fill="#b98a5a" stroke="#222" stroke-width="3" stroke-linejoin="round">
+    <ellipse cx="70" cy="170" rx="12" ry="8"/>
+    <ellipse cx="880" cy="190" rx="14" ry="9"/>
+    <ellipse cx="120" cy="360" rx="10" ry="7"/>
+    <ellipse cx="850" cy="370" rx="12" ry="8"/>
+    <ellipse cx="60" cy="490" rx="14" ry="9"/>
+    <ellipse cx="910" cy="500" rx="10" ry="7"/>
+    <ellipse cx="400" cy="160" rx="9" ry="6"/>
+    <ellipse cx="610" cy="180" rx="11" ry="7"/>
+  </g>
+
+  <!-- Grama -->
+  <path d="M0 96 H960 V116 Q930 126 900 116 Q870 126 840 116 Q810 126 780 116 Q750 126 720 116 Q690 126 660 116 Q630 126 600 116 Q570 126 540 116 Q510 126 480 116 Q450 126 420 116 Q390 126 360 116 Q330 126 300 116 Q270 126 240 116 Q210 126 180 116 Q150 126 120 116 Q90 126 60 116 Q30 126 0 116 Z"
+        fill="#5cb83a" stroke="#222" stroke-width="4" stroke-linejoin="round"/>
+
+  <!-- Túnel (onde o mineiro trabalha) -->
+  <rect x="200" y="270" width="560" height="220" rx="24" fill="#4a2f18" stroke="#222" stroke-width="5"/>
+  <!-- Chão do túnel -->
+  <rect x="204" y="470" width="552" height="16" fill="#5e3c1f"/>
+  <line x1="204" y1="470" x2="756" y2="470" stroke="#222" stroke-width="4"/>
+
+  <!-- Parede de escavação (onde o mineiro cava) -->
+  <path d="M742 290 L640 290 Q622 312 636 334 Q612 356 630 382 Q606 408 628 432 Q614 452 624 470 L742 470 Z"
+        fill="#a87444" stroke="#222" stroke-width="4" stroke-linejoin="round"/>
+  <!-- Rachaduras -->
+  <g fill="none" stroke="#5e3c1f" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M640 340 L662 352 L676 346"/>
+    <path d="M634 404 L656 410 L664 424"/>
+    <path d="M668 372 L684 380"/>
+  </g>
+  <!-- Pedras e minério na parede -->
+  <g stroke="#222" stroke-width="3" stroke-linejoin="round">
+    <path d="M664 310 L680 304 L690 316 L676 324 Z" fill="#8a8f98"/>
+    <path d="M690 390 L706 384 L714 398 L698 404 Z" fill="#8a8f98"/>
+    <path d="M652 446 L666 440 L674 452 L660 458 Z" fill="#8a8f98"/>
+    <path d="M684 344 L694 340 L698 350 L688 354 Z" fill="#f7c21b"/>
+    <path d="M660 380 L668 376 L672 384 L664 388 Z" fill="#f7c21b"/>
+    <path d="M696 432 L704 428 L708 436 L700 440 Z" fill="#f7c21b"/>
+  </g>
+  <!-- Terra solta no chão -->
+  <path d="M600 470 Q612 456 626 462 Q636 452 646 470 Z" fill="#a87444" stroke="#222" stroke-width="3" stroke-linejoin="round"/>
+
+  <!-- Vigas de madeira -->
+  <g fill="#b07a3e" stroke="#222" stroke-width="4" stroke-linejoin="round">
+    <rect x="222" y="280" width="20" height="192"/>
+    <rect x="718" y="280" width="20" height="192"/>
+    <rect x="212" y="272" width="536" height="20"/>
+  </g>
+  <!-- Pregos -->
+  <g fill="#555" stroke="none">
+    <circle cx="232" cy="282" r="3"/>
+    <circle cx="728" cy="282" r="3"/>
+  </g>
+
+  <!-- Lampião pendurado -->
+  <line x1="480" y1="292" x2="480" y2="312" stroke="#222" stroke-width="3"/>
+  <circle cx="480" cy="330" r="34" fill="#f7c21b" opacity="0.15"/>
+  <rect x="470" y="312" width="20" height="26" rx="5" fill="#fff6a0" stroke="#222" stroke-width="4"/>
+</svg>

@@ -1,0 +1,132 @@
+/* Página: fundo escuro e jogo centralizado */
+body {
+  margin: 0;
+  height: 100vh;
+  background: #2b2b2b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Caixa do jogo: tamanho fixo */
+#jogo {
+  position: relative;
+  width: 960px;
+  height: 540px;
+  overflow: hidden;
+  border: 4px solid #222;
+  border-radius: 12px;
+}
+
+/* Fundo ocupa a caixa inteira */
+#fundo {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 960px;
+  height: 540px;
+}
+
+/* Mineiro: pés no chão do túnel, de frente para a parede */
+#mineiro {
+  position: absolute;
+  left: 450px;
+  top: 298px;
+  width: 200px;
+  height: 180px;
+  cursor: pointer;        /* mãozinha ao passar o mouse */
+  user-select: none;      /* não seleciona a imagem ao clicar rápido */
+  -webkit-user-drag: none; /* não arrasta a imagem */
+}
+
+/* Painel do dinheiro: canto superior esquerdo */
+#painel-dinheiro {
+  position: absolute;
+  left: 20px;
+  top: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 16px 4px 6px;
+  background: #ffffff;
+  border: 4px solid #222;
+  border-radius: 30px;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 26px;
+  font-weight: 900;
+  color: #222;
+}
+
+#painel-dinheiro img {
+  width: 40px;
+  height: 40px;
+}
+
+/* Botão de upgrade: canto superior direito */
+#botao-upgrade {
+  position: absolute;
+  right: 20px;
+  top: 20px;
+  width: 220px;
+  height: 52px;
+  background: #f7c21b;
+  border: 4px solid #222;
+  border-radius: 14px;
+  box-shadow: 0 4px 0 #222;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 17px;
+  font-weight: 900;
+  color: #222;
+  cursor: pointer;
+}
+
+/* Efeito de "apertar" */
+#botao-upgrade:active {
+  transform: translateY(4px);
+  box-shadow: none;
+}
+
+/* Pedra que salta da parede a cada clique */
+.pedra {
+  position: absolute;
+  left: 580px;
+  top: 420px;
+  width: 60px;
+  height: 50px;
+  pointer-events: none; /* não atrapalha o clique no mineiro */
+  animation: pedra-salta 0.6s ease-out forwards;
+}
+
+@keyframes pedra-salta {
+  0%   { transform: translate(0, 0) scale(0.5); opacity: 1; }
+  40%  { transform: translate(-20px, -40px) scale(1); opacity: 1; }
+  100% { transform: translate(-40px, 0) scale(1); opacity: 0; }
+}
+
+/* Texto "+N" que sobe e some */
+.ganho {
+  position: absolute;
+  left: 600px;
+  top: 360px;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 28px;
+  font-weight: 900;
+  color: #f7c21b;
+  -webkit-text-stroke: 1.5px #222;
+  pointer-events: none;
+  animation: ganho-sobe 0.8s ease-out forwards;
+}
+
+@keyframes ganho-sobe {
+  0%   { transform: translateY(0); opacity: 1; }
+  100% { transform: translateY(-60px); opacity: 0; }
+}
+
+/* Sem dinheiro suficiente: fica cinza */
+#botao-upgrade:disabled {
+  background: #b5b5b5;
+  color: #555;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: 0 4px 0 #222;
+}

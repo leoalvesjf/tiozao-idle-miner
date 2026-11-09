@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Idle Miner</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Caixa do jogo: 960 x 540 -->
+  <div id="jogo">
+    <img id="fundo" src="assets/fundo-terra.svg" alt="Fundo da mina">
+    <img id="mineiro" src="assets/mineiro-parado.svg" alt="Mineiro">
+
+    <!-- Painel do dinheiro -->
+    <div id="painel-dinheiro">
+      <img src="assets/moeda.svg" alt="Moeda">
+      <span id="dinheiro">0</span>
+    </div>
+
+    <!-- Botão de upgrade da picareta -->
+    <button id="botao-upgrade">Picareta</button>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>

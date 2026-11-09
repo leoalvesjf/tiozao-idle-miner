@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 100" width="120" height="100">
+  <!-- Pedra de minério -->
+  <g stroke="#222" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">
+    <!-- Corpo da pedra -->
+    <path d="M14 82 L8 56 L24 30 L50 16 L80 20 L104 38 L112 66 L100 86 Z" fill="#8a8f98"/>
+    <!-- Sombra na parte de baixo -->
+    <path d="M14 82 L30 70 L70 74 L112 66 L100 86 Z" fill="#6c717a" stroke-width="0"/>
+    <path d="M14 82 L100 86 L112 66" fill="none"/>
+    <!-- Brilho -->
+    <path d="M28 36 L48 24 L60 26" fill="none" stroke="#c4c8cf" stroke-width="5"/>
+
+    <!-- Pepitas de ouro -->
+    <path d="M36 50 L46 44 L54 52 L46 60 L36 58 Z" fill="#f7c21b"/>
+    <path d="M70 36 L80 34 L84 44 L74 48 Z" fill="#f7c21b"/>
+    <path d="M74 60 L86 56 L92 66 L80 70 Z" fill="#f7c21b"/>
+    <!-- Brilho das pepitas -->
+    <circle cx="42" cy="50" r="2" fill="#fff6a0" stroke="none"/>
+    <circle cx="76" cy="39" r="1.6" fill="#fff6a0" stroke="none"/>
+    <circle cx="81" cy="61" r="1.8" fill="#fff6a0" stroke="none"/>
+  </g>
+</svg>
