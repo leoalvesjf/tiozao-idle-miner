@@ -596,29 +596,6 @@ function rolarPara(y) {
   rolarBaixo.disabled = cameraY >= maximo;
 }
 
-// ===================== Celular: encaixar na tela e arrastar com o dedo =====================
-let escala = 1;
-function ajustarTamanho() {
-  // 968 x 548 = janela de 960 x 540 + bordas de 4 px
-  escala = Math.min(1, window.innerWidth / 968, window.innerHeight / 548);
-  jogo.style.transform = escala < 1 ? "scale(" + escala + ")" : "";
-}
-window.addEventListener("resize", ajustarTamanho);
-ajustarTamanho();
-
-// Arrastar o dedo para cima/baixo rola a mina. Um toque sem arrastar continua sendo clique.
-let dedoY = null;
-jogo.addEventListener("touchstart", function (e) {
-  dedoY = e.touches.length === 1 ? e.touches[0].clientY : null;
-}, { passive: true });
-jogo.addEventListener("touchmove", function (e) {
-  if (dedoY === null || linhasAbertas) { return; }
-  const y = e.touches[0].clientY;
-  rolarPara(cameraY + (dedoY - y) / escala);
-  dedoY = y;
-}, { passive: true });
-jogo.addEventListener("touchend", function () { dedoY = null; });
-
 jogo.addEventListener("wheel", function (e) {
   if (linhasAbertas) { return; } // painel aberto: não rola
   e.preventDefault();
