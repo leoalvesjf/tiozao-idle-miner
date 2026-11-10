@@ -1,7 +1,9 @@
 // =====================================================================
 //  Tiozão Idle Miner: game.js
 //  Cadeia: mineiros → elevador (para em cada andar) → depósito → ajudante → fábrica → $
-//  Regra: um clique = uma tarefa completa (a volta faz parte). Nada é automático sem gerente.
+//  Regras: o mineiro cava sozinho; o clique manda levar até a caixa do andar.
+//  Elevador e ajudante: um clique = uma viagem. O gerente faz os cliques da estação.
+//  Cada estação tem UM nível, que melhora todos os números dela.
 // =====================================================================
 
 // ===== Layout do mundo (ver plano) =====
@@ -24,27 +26,75 @@ const X_AJ_DEPOSITO = 360;       // ajudante parado ao lado do depósito
 const X_AJ_FABRICA = 560;        // carrinho na porta da fábrica
 const VEL_AJUDANTE = 2.5;
 
-const RITMO_GERENTE = 30;        // gerente de andar: um golpe a cada 30 quadros (~0,5 s)
+const RITMO_GOLPE = 30;          // mineiros cavam sozinhos: um golpe a cada 30 quadros (~0,5 s)
 
 function topoAndar(i) { return ALTURA_SUPERFICIE + i * ALTURA_ANDAR; }
 function yCabineNoAndar(i) { return topoAndar(i) + 114; } // piso da cabine no chão do andar
 
-// ===== Upgrades =====
-// Picareta e sacola (de cada andar): valor sobe somando, preço ×1,5.
-// Regra da proporção (elevador, depósito, carrinho, velocidade): valor e preço sobem no mesmo ritmo (fator).
-const upgrades = {
-  picareta: { nome: "Picareta", nivel: 0, precoBase: 10, valor: function (n) { return n + 1; } },
-  sacola:   { nome: "Sacola",   nivel: 0, precoBase: 15, valor: function (n) { return 10 + 5 * n; } },
-  elevador: { nome: "Elevador", nivel: 0, precoBase: 20, fator: 1.4, valor: function (n) { return Math.round(20 * 1.4 ** n); } },
-  velocidade: { nome: "Velocidade", nivel: 0, precoBase: 25, fator: 1.4, valor: function (n) { return Math.round(100 * 1.1 ** n); } }, // em %
-  deposito: { nome: "Depósito", nivel: 0, precoBase: 20, fator: 1.4, valor: function (n) { return Math.round(30 * 1.4 ** n); } },
-  carrinho: { nome: "Carrinho", nivel: 0, precoBase: 15, fator: 1.4, valor: function (n) { return Math.round(10 * 1.4 ** n); } }
+// ===== Níveis das estações (regra da proporção) =====
+// Cada nível: os números da estação sobem ×CRESCE e o preço do próximo nível sobe ×PRECO_CRESCE.
+// Todos os números de balanceamento ficam aqui, para o simulador ajustar depois.
+const CRESCE = 1.1;          // +10% por nível
+const PRECO_CRESCE = 1.12;   // +12% de preço por nível
+
+const estacoes = {
+  andar: {
+    precoBase: function (i) { return 10 * 5 ** i; },          // andar mais fundo = mais caro
+    stats: function (n, i) {
+      return [
+        { nome: "Minério por golpe", icone: "pedra-minerio.svg", v: (i + 1) * CRESCE ** n },
+        { nome: "Sacola por mineiro", icone: "sacola.svg", v: 10 * CRESCE ** n }
+      ];
+    }
+  },
+  elevador: {
+    precoBase: function () { return 20; },
+    stats: function (n) {
+      return [
+        { nome: "Carga", icone: "elevador-cheio.svg", v: 20 * CRESCE ** n },
+        { nome: "Velocidade", icone: "elevador-vazio.svg", v: 100 * 1.03 ** n, sufixo: "%" }
+      ];
+    }
+  },
+  superficie: {
+    precoBase: function () { return 15; },
+    stats: function (n) {
+      return [
+        { nome: "Carga do carrinho", icone: "ajudante-andando-cheio-1.svg", v: 10 * CRESCE ** n },
+        { nome: "Velocidade", icone: "ajudante-parado.svg", v: 100 * 1.03 ** n, sufixo: "%" }
+      ];
+    }
+  }
 };
 
-function valorAtual(id) { return upgrades[id].valor(upgrades[id].nivel); }
-function preco(id) { return Math.floor(upgrades[id].precoBase * (upgrades[id].fator || 1.5) ** upgrades[id].nivel); }
-// Velocidade do elevador em pixels por quadro (100% = VEL_ELEVADOR)
-function velElevador() { return VEL_ELEVADOR * valorAtual("velocidade") / 100; }
+// Preço para subir k níveis a partir do nível n (soma de uma progressão geométrica)
+function precoNiveis(tipo, i, n, k) {
+  const base = estacoes[tipo].precoBase(i) * PRECO_CRESCE ** n;
+  return Math.ceil(base * (PRECO_CRESCE ** k - 1) / (PRECO_CRESCE - 1));
+}
+
+// Quantos níveis dá para comprar com o dinheiro atual (para o botão "Max")
+function niveisQueDaPraComprar(tipo, i, n) {
+  let k = 0;
+  while (k < 1000 && precoNiveis(tipo, i, n, k + 1) <= dinheiro) { k++; }
+  return k;
+}
+
+// Nível atual de uma estação (começa em 0; na tela aparece +1)
+function nivelDe(tipo, i) {
+  if (tipo === "andar") { return andares[i].nivel; }
+  return niveis[tipo];
+}
+function subirNivel(tipo, i, k) {
+  if (tipo === "andar") { andares[i].nivel += k; } else { niveis[tipo] += k; }
+}
+// Valor de um número da estação no nível atual (posição na lista de stats)
+function stat(tipo, i, pos) { return estacoes[tipo].stats(nivelDe(tipo, i), i)[pos].v; }
+
+function capElevador() { return Math.floor(stat("elevador", 0, 0)); }
+function velElevador() { return VEL_ELEVADOR * stat("elevador", 0, 1) / 100; }
+function capCarrinho() { return Math.floor(stat("superficie", 0, 0)); }
+function velAjudante() { return VEL_AJUDANTE * stat("superficie", 0, 1) / 100; }
 
 // Contratar mineiro no andar i: 50 × 2^(mineiros-1) × 5^i
 function precoMineiro(i) { return Math.floor(50 * 2 ** (andares[i].mineiros - 1) * 5 ** i); }
@@ -63,11 +113,12 @@ let dinheiro = 0;
 let noDeposito = 0;
 let tempo = 0;          // contador de quadros (anima as caminhadas)
 let cameraY = 0;        // quanto o mundo está rolado para baixo
-const andares = [];     // cada andar: { mineiros, sacola, estado, x, golpe, imgs, balao, mais }
+const andares = [];     // cada andar: { nivel, mineiros, sacola, caixa, estado, x, golpe, ... }
 const elev = { y: Y_TOPO_ELEVADOR, estado: "topo", carga: 0, alvo: 0, espera: 0 };
 // estados do elevador: "topo" (parado em cima), "descendo", "parado" (num andar), "subindo"
 const aj = { x: X_AJ_DEPOSITO, estado: "parado", carga: 0 };
 const gerentes = { elevador: false, superficie: false }; // os de andar ficam em cada andar
+const niveis = { elevador: 0, superficie: 0 };           // os de andar ficam em cada andar
 
 // ===== Peças fixas da tela =====
 const jogo = document.getElementById("jogo");
@@ -95,6 +146,13 @@ const painelLinhas = document.getElementById("painel-linhas");
 
 // ===== Utilidades =====
 function formatar(n) { return Math.floor(n).toLocaleString("pt-BR"); }
+// Números do painel: 1 casa decimal quando é pequeno e quebrado (ex.: 1,1)
+function formatarStat(n) {
+  if (n < 100 && Math.abs(n - Math.round(n)) > 0.05) {
+    return n.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  }
+  return formatar(Math.round(n));
+}
 
 function trocarImagem(img, nome) {
   const caminho = "assets/" + nome;
@@ -115,8 +173,7 @@ function criar(tag, classe, pai) {
 // Balão: texto + cor ("", "amarelo", "laranja" ou "vermelho")
 function mudarBalao(el, texto, cor) {
   trocarTexto(el, texto);
-  const classe = "balao" + (cor ? " " + cor : "");
-  if (el.className !== classe) { el.className = classe; }
+  ["amarelo", "laranja", "vermelho"].forEach(function (c) { el.classList.toggle(c, c === cor); }); // mantém as outras classes
 }
 
 // Texto "+N" flutuando em qualquer ponto do mundo
@@ -140,15 +197,15 @@ function mostrarPedra(left, top) {
 // =====================================================================
 //  ANDARES
 // =====================================================================
-// Picareta e sacola são de cada andar (a.niveis); a tabela "upgrades" só dá a fórmula do valor
-function valorDoAndar(a, id) { return upgrades[id].valor(a.niveis[id]); }
-// Preço no andar i: base × 1,5^nível × 5^i (mais fundo = mais caro, como os mineiros)
-function precoDoAndar(a, i, id) { return Math.floor(upgrades[id].precoBase * 1.5 ** a.niveis[id] * 5 ** i); }
+function capSacola(a) { return Math.floor(estacoes.andar.stats(a.nivel, a.i)[1].v * a.mineiros); }
 
-function capSacola(a) { return valorDoAndar(a, "sacola") * a.mineiros; }
+// Quanto entra por golpe no andar: minério por golpe × mineiros (o andar mais fundo vale mais)
+function ganhoPorGolpe(a) { return estacoes.andar.stats(a.nivel, a.i)[0].v * a.mineiros; }
 
-// Quanto entra por clique no andar i: picareta × mineiros × (i+1). Mais fundo = minério vale mais
-function ganhoPorClique(i) { return valorDoAndar(andares[i], "picareta") * andares[i].mineiros * (i + 1); }
+// Extração por segundo (painel): golpe × mineiros × golpes por segundo
+function extracaoPorSegundo(a, n) {
+  return estacoes.andar.stats(n, a.i)[0].v * a.mineiros * (60 / RITMO_GOLPE);
+}
 
 function adicionarAndar() {
   const i = andares.length;
@@ -170,7 +227,15 @@ function adicionarAndar() {
     imgs[k] = img;
   }
 
-  const balao = criar("div", "balao", div);
+  // Barra de progresso da sacola (fica em cima dos mineiros)
+  const barra = criar("div", "barra", div);
+  const barraCheia = criar("div", "barra-cheia", barra);
+  const barraTexto = criar("span", "barra-texto", barra);
+
+  // Caixa na beira do poço: o mineiro despeja aqui e volta a cavar
+  const caixa = criar("img", "caixa", div);
+  caixa.src = "assets/deposito-vazio.svg";
+  const balaoCaixa = criar("div", "balao balao-caixa", div);
 
   const imgGerente = criar("img", "gerente", div); // aparece quando contratado
   imgGerente.src = "assets/gerente.svg";
@@ -180,9 +245,10 @@ function adicionarAndar() {
   criar("span", "selo", mais);
   mais.addEventListener("click", function () { abrirPainel("andar", i); });
 
-  andares.push({ mineiros: 1, sacola: 0, estado: "cavando", x: X_PAREDE, golpe: 0,
-                 gerente: false, relogio: 0, niveis: { picareta: 0, sacola: 0 }, // gerente: automatiza o andar e libera mineiros extras
-                 imgs: imgs, balao: balao, mais: mais, imgGerente: imgGerente });
+  andares.push({ i: i, nivel: 0, mineiros: 1, sacola: 0, caixa: 0, estado: "cavando", x: X_PAREDE, golpe: 0,
+                 gerente: false, relogio: 0, // gerente: leva sozinho e libera mineiros extras
+                 imgs: imgs, barra: barra, barraCheia: barraCheia, barraTexto: barraTexto,
+                 imgCaixa: caixa, balaoCaixa: balaoCaixa, mais: mais, imgGerente: imgGerente });
   atualizarVagaDoProximoAndar();
 }
 
@@ -201,32 +267,41 @@ function atualizarVagaDoProximoAndar() {
   mundo.style.height = alturaMundo() + "px";
 }
 
-// Clique nos mineiros de um andar: cava (todos juntos) ou, com a sacola cheia, manda levar
+// Clique nos mineiros: levam o que tem na sacola até a caixa do andar
 function clicarAndar(i) {
   const a = andares[i];
-  if (a.estado !== "cavando") { return; }
+  if (a.estado !== "cavando" || a.sacola <= 0) { return; }
+  a.estado = "indo";
+}
 
+// Golpe automático (todos os mineiros juntos), até a sacola encher
+function cavar(a) {
   const cap = capSacola(a);
-  if (a.sacola >= cap) {
-    a.estado = "indo";
-    return;
-  }
-
-  const ganho = Math.min(ganhoPorClique(i), cap - a.sacola); // o excesso é perdido
+  if (a.sacola >= cap) { return; }
+  const ganho = Math.min(ganhoPorGolpe(a), cap - a.sacola); // o excesso é perdido
   a.sacola = a.sacola + ganho;
   a.golpe = 9; // pose "trabalhando" por 9 quadros (~0,15 s)
-  mostrarPedra(740, topoAndar(i) + 170);
-  mostrarTexto("+" + formatar(ganho), 760, topoAndar(i) + 110);
+  // Efeitos só no andar que está na tela
+  const topo = topoAndar(a.i);
+  if (topo + ALTURA_ANDAR > cameraY && topo < cameraY + ALTURA_TELA) {
+    mostrarPedra(740, topo + 170);
+    mostrarTexto("+" + formatarStat(ganho), 760, topo + 110);
+  }
 }
 
 function moverAndar(a) {
   if (a.golpe > 0) { a.golpe--; }
 
-  if (a.estado === "indo") {
+  if (a.estado === "cavando") {
+    a.relogio++;
+    if (a.relogio >= RITMO_GOLPE) { a.relogio = 0; cavar(a); }
+  } else if (a.estado === "indo") {
     a.x = a.x - VEL_MINEIRO;
     if (a.x <= X_POCO) {
       a.x = X_POCO;
-      a.estado = "esperando"; // só despeja quando o elevador parar neste andar
+      a.caixa = a.caixa + a.sacola; // despeja na caixa e volta, sem esperar o elevador
+      a.sacola = 0;
+      a.estado = "voltando";
     }
   } else if (a.estado === "voltando") {
     a.x = a.x + VEL_MINEIRO;
@@ -251,9 +326,6 @@ function desenharAndar(a, i) {
     } else if (a.estado === "indo") {
       nome = "mineiro-andando-" + passo + ".svg";
       espelhado = true;
-    } else if (a.estado === "esperando") {
-      nome = "mineiro-andando-1.svg";
-      espelhado = true;
     } else if (a.estado === "voltando") {
       nome = "mineiro-andando-vazio-" + passo + ".svg";
     }
@@ -262,31 +334,32 @@ function desenharAndar(a, i) {
     img.style.transform = espelhado ? "scaleX(-1)" : "none";
   }
 
-  // Balão do andar
+  // Barra de progresso da sacola
   const cap = capSacola(a);
-  if (a.estado === "esperando") {
-    mudarBalao(a.balao, "Esperando " + formatar(a.sacola), "laranja");
-  } else if (a.estado === "cavando" && a.sacola >= cap) {
-    mudarBalao(a.balao, "Levar!", "amarelo");
-  } else {
-    mudarBalao(a.balao, formatar(a.sacola) + "/" + formatar(cap), "");
-  }
-  a.balao.style.left = (a.x + 75 + OFFSET_MINEIRO[a.mineiros - 1] / 2) + "px";
+  const cheia = a.sacola >= cap;
+  a.barraCheia.style.width = Math.min(100, a.sacola / cap * 100) + "%";
+  trocarTexto(a.barraTexto, cheia && a.estado === "cavando" ? "Levar!" : formatar(a.sacola) + "/" + formatar(cap));
+  a.barra.classList.toggle("cheia", cheia && a.estado === "cavando");
+  a.barra.style.left = (a.x + 75 + OFFSET_MINEIRO[a.mineiros - 1] / 2) + "px";
+
+  // Caixa do andar
+  trocarImagem(a.imgCaixa, a.caixa > 0 ? "deposito-cheio.svg" : "deposito-vazio.svg");
+  mudarBalao(a.balaoCaixa, formatar(a.caixa), a.caixa > 0 ? "amarelo" : "");
 
   a.imgGerente.classList.toggle("contratado", a.gerente);
 
   // Botão "+": selo com a equipe e pulsa se dá para comprar algo
-  trocarTexto(a.mais.querySelector(".selo"), a.mineiros + "/" + MAX_MINEIROS);
+  trocarTexto(a.mais.querySelector(".selo"), "Nv " + (a.nivel + 1));
   a.mais.classList.toggle("pode", podeComprarAlgo("andar", i));
 }
 
 // =====================================================================
 //  ELEVADOR: desce parando em cada andar, sobe e despeja no depósito
 // =====================================================================
-// Primeiro andar (a partir de "inicio") com mineiros esperando com minério; -1 se nenhum
+// Primeiro andar (a partir de "inicio") com minério na caixa; -1 se nenhum
 function proximoAndarComMinerio(inicio) {
   for (let j = inicio; j < andares.length; j++) {
-    if (andares[j].estado === "esperando" && andares[j].sacola > 0) { return j; }
+    if (andares[j].caixa >= 1) { return j; }
   }
   return -1;
 }
@@ -302,7 +375,7 @@ function clicarElevador() {
 }
 
 function moverElevador() {
-  const cap = valorAtual("elevador");
+  const cap = capElevador();
 
   if (elev.estado === "descendo") {
     elev.y = elev.y + velElevador();
@@ -314,13 +387,12 @@ function moverElevador() {
     }
 
   } else if (elev.estado === "parado") {
-    // Recolhe de quem está esperando neste andar (até encher a cabine)
+    // Recolhe da caixa deste andar (até encher a cabine)
     const a = andares[elev.alvo];
-    if (a.estado === "esperando" && elev.carga < cap) {
-      const pega = Math.min(a.sacola, cap - elev.carga);
+    if (elev.carga < cap) {
+      const pega = Math.min(a.caixa, cap - elev.carga);
       elev.carga = elev.carga + pega;
-      a.sacola = a.sacola - pega;
-      if (a.sacola <= 0) { a.estado = "voltando"; }
+      a.caixa = a.caixa - pega;
     }
     elev.espera--;
     if (elev.espera <= 0) {
@@ -343,33 +415,24 @@ function moverElevador() {
     }
 
   } else if (elev.estado === "topo" && elev.carga > 0) {
-    // Despeja no depósito o que couber; o resto espera na cabine
-    const espaco = valorAtual("deposito") - noDeposito;
-    const despeja = Math.min(elev.carga, espaco);
-    if (despeja > 0) {
-      noDeposito = noDeposito + despeja;
-      elev.carga = elev.carga - despeja;
-    }
+    // Despeja tudo no depósito (regra: guardar é infinito; quem limita é o transporte)
+    noDeposito = noDeposito + elev.carga;
+    elev.carga = 0;
   }
 }
 
 function desenharElevador() {
-  const cap = valorAtual("elevador");
+  const cap = capElevador();
   trocarImagem(elevador, elev.carga > 0 ? "elevador-cheio.svg" : "elevador-vazio.svg");
   elevador.style.top = elev.y + "px";
   cabo.style.height = (elev.y - 116) + "px"; // da roldana até a cabine
 
-  const travado = elev.estado === "topo" && elev.carga > 0; // depósito lotado
-  if (travado) {
-    mudarBalao(balaoElevador, "Depósito cheio!", "vermelho");
-  } else {
-    mudarBalao(balaoElevador, formatar(elev.carga) + "/" + formatar(cap), elev.carga > 0 ? "amarelo" : "");
-  }
+  mudarBalao(balaoElevador, formatar(elev.carga) + "/" + formatar(cap), elev.carga > 0 ? "amarelo" : "");
   balaoElevador.style.top = (elev.y - 30) + "px";
   elevador.style.cursor = (elev.estado === "topo" && elev.carga === 0) ? "pointer" : "default";
 
   gerenteElevador.classList.toggle("contratado", gerentes.elevador);
-  trocarTexto(maisElevador.querySelector(".selo"), "Nv " + upgrades.elevador.nivel);
+  trocarTexto(maisElevador.querySelector(".selo"), "Nv " + (niveis.elevador + 1));
   maisElevador.classList.toggle("pode", podeComprarAlgo("elevador"));
 }
 
@@ -378,14 +441,14 @@ function desenharElevador() {
 // =====================================================================
 function clicarAjudante() {
   if (aj.estado !== "parado" || noDeposito <= 0) { return; }
-  aj.carga = Math.min(noDeposito, valorAtual("carrinho"));
+  aj.carga = Math.min(noDeposito, capCarrinho());
   noDeposito = noDeposito - aj.carga;
   aj.estado = "indo";
 }
 
 function moverAjudante() {
   if (aj.estado === "indo") {
-    aj.x = aj.x + VEL_AJUDANTE;
+    aj.x = aj.x + velAjudante();
     if (aj.x >= X_AJ_FABRICA) {
       aj.x = X_AJ_FABRICA;
       dinheiro = dinheiro + aj.carga; // fábrica: 1 minério = 1 moeda
@@ -394,7 +457,7 @@ function moverAjudante() {
       aj.estado = "voltando";
     }
   } else if (aj.estado === "voltando") {
-    aj.x = aj.x - VEL_AJUDANTE;
+    aj.x = aj.x - velAjudante();
     if (aj.x <= X_AJ_DEPOSITO) {
       aj.x = X_AJ_DEPOSITO;
       aj.estado = "parado";
@@ -412,17 +475,12 @@ function desenharSuperficie() {
   ajudante.style.left = aj.x + "px";
   ajudante.style.transform = aj.estado === "voltando" ? "scaleX(-1)" : "none";
 
-  // Depósito
-  const capDep = valorAtual("deposito");
+  // Depósito (sem limite: só mostra quanto tem guardado)
   trocarImagem(deposito, noDeposito > 0 ? "deposito-cheio.svg" : "deposito-vazio.svg");
-  if (noDeposito >= capDep) {
-    mudarBalao(balaoDeposito, "Cheio!", "vermelho");
-  } else {
-    mudarBalao(balaoDeposito, formatar(noDeposito) + "/" + formatar(capDep), noDeposito > 0 ? "amarelo" : "");
-  }
+  mudarBalao(balaoDeposito, formatar(noDeposito), noDeposito > 0 ? "amarelo" : "");
 
   gerenteSuperficie.classList.toggle("contratado", gerentes.superficie);
-  trocarTexto(maisSuperficie.querySelector(".selo"), "Nv " + upgrades.carrinho.nivel);
+  trocarTexto(maisSuperficie.querySelector(".selo"), "Nv " + (niveis.superficie + 1));
   maisSuperficie.classList.toggle("pode", podeComprarAlgo("superficie"));
 
   // Vaga do próximo andar
@@ -433,32 +491,6 @@ function desenharSuperficie() {
 // =====================================================================
 //  PAINEL DE UPGRADE (um componente só para tudo)
 // =====================================================================
-// Linha de upgrade comum (picareta, sacola, elevador, depósito, carrinho)
-function linhaUpgrade(id, icone, sufixo) {
-  const u = upgrades[id];
-  return {
-    icone: icone,
-    nome: function () { return u.nome + " · Nv " + u.nivel; },
-    valor: function () { return formatar(valorAtual(id)) + " → " + formatar(u.valor(u.nivel + 1)) + sufixo; },
-    preco: function () { return preco(id); },
-    max: function () { return false; },
-    comprar: function () { u.nivel = u.nivel + 1; }
-  };
-}
-
-// Linha de upgrade de um andar (picareta e sacola, níveis próprios do andar)
-function linhaUpgradeAndar(a, i, id, icone, sufixo) {
-  const u = upgrades[id];
-  return {
-    icone: icone,
-    nome: function () { return u.nome + " · Nv " + a.niveis[id]; },
-    valor: function () { return formatar(valorDoAndar(a, id)) + " → " + formatar(u.valor(a.niveis[id] + 1)) + sufixo; },
-    preco: function () { return precoDoAndar(a, i, id); },
-    max: function () { return false; },
-    comprar: function () { a.niveis[id] = a.niveis[id] + 1; }
-  };
-}
-
 // Linha "Gerente": contratar automatiza a estação (opção A)
 // tem() diz se já está contratado; contratar() liga o gerente
 function linhaGerente(tipo, i, tem, contratar) {
@@ -473,7 +505,7 @@ function linhaGerente(tipo, i, tem, contratar) {
   };
 }
 
-// O que aparece em cada painel
+// Linhas avulsas de cada painel (gerente, mineiros, abrir andar). O nível fica num bloco à parte.
 function linhasDoPainel(tipo, i) {
   if (tipo === "andar") {
     const a = andares[i];
@@ -490,24 +522,14 @@ function linhasDoPainel(tipo, i) {
         max: function () { return a.mineiros >= MAX_MINEIROS; },
         bloqueio: function () { return a.gerente ? "" : "🔒 Gerente"; }, // regra: mineiro extra só com gerente
         comprar: function () { a.mineiros = a.mineiros + 1; }
-      },
-      linhaUpgradeAndar(a, i, "picareta", "pedra-minerio.svg", " por golpe"),
-      linhaUpgradeAndar(a, i, "sacola", "sacola.svg", " por mineiro")
+      }
     ];
   }
   if (tipo === "elevador") {
-    return [
-      linhaGerente("elevador", 0, function () { return gerentes.elevador; }, function () { gerentes.elevador = true; }),
-      linhaUpgrade("elevador", "elevador-vazio.svg", " por viagem"),
-      linhaUpgrade("velocidade", "elevador-cheio.svg", "% de velocidade")
-    ];
+    return [linhaGerente("elevador", 0, function () { return gerentes.elevador; }, function () { gerentes.elevador = true; })];
   }
   if (tipo === "superficie") {
-    return [
-      linhaGerente("superficie", 0, function () { return gerentes.superficie; }, function () { gerentes.superficie = true; }),
-      linhaUpgrade("deposito", "deposito-vazio.svg", " de espaço"),
-      linhaUpgrade("carrinho", "ajudante-parado.svg", " por viagem")
-    ];
+    return [linhaGerente("superficie", 0, function () { return gerentes.superficie; }, function () { gerentes.superficie = true; })];
   }
   // tipo === "novoAndar"
   return [{
@@ -524,6 +546,15 @@ function linhasDoPainel(tipo, i) {
   }];
 }
 
+// Números mostrados no bloco de nível (nível n). O andar ganha a "Extração total" no topo.
+function statsDoPainel(tipo, i, n) {
+  const lista = estacoes[tipo].stats(n, i).slice();
+  if (tipo === "andar") {
+    lista.unshift({ nome: "Extração total", icone: "moeda.svg", v: extracaoPorSegundo(andares[i], n), sufixo: "/s" });
+  }
+  return lista;
+}
+
 function tituloDoPainel(tipo, i) {
   if (tipo === "andar") { return "Andar " + (i + 1); }
   if (tipo === "elevador") { return "Elevador"; }
@@ -538,15 +569,20 @@ function bloqueioDe(l) { return l.bloqueio ? l.bloqueio() : ""; }
 function podeComprar(l) { return !bloqueioDe(l) && !l.max() && dinheiro >= l.preco(); }
 
 function podeComprarAlgo(tipo, i) {
-  return linhasDoPainel(tipo, i).some(podeComprar);
+  if (linhasDoPainel(tipo, i).some(podeComprar)) { return true; }
+  return tipo !== "novoAndar" && dinheiro >= precoNiveis(tipo, i, nivelDe(tipo, i), 1);
 }
 
 let linhasAbertas = null; // linhas do painel aberto (para atualizar a cada quadro)
+let blocoNivel = null;    // bloco de nível do painel aberto (null no "novo andar")
+let multiplicador = 1;    // 1, 10, 50 ou 0 (= Max); fica lembrado entre painéis
+let painelTipo = "";
 
 function abrirPainel(tipo, i) {
-  painelTitulo.textContent = tituloDoPainel(tipo, i);
   painelLinhas.innerHTML = "";
   linhasAbertas = [];
+  blocoNivel = null;
+  painelTipo = tipo;
 
   linhasDoPainel(tipo, i).forEach(function (l) {
     const div = criar("div", "linha", painelLinhas);
@@ -558,19 +594,63 @@ function abrirPainel(tipo, i) {
     const botao = criar("button", "linha-comprar", div);
     botao.addEventListener("click", function () {
       if (!podeComprar(l)) { return; }
-      dinheiro = dinheiro - l.preco(); // paga antes de subir o nível
+      dinheiro = dinheiro - l.preco(); // paga antes de comprar
       l.comprar();
     });
     linhasAbertas.push({ l: l, nome: nome, valor: valor, botao: botao });
   });
 
+  if (tipo !== "novoAndar") { criarBlocoNivel(tipo, i); }
+
   painel.classList.remove("escondido");
   atualizarPainel();
+}
+
+// Bloco de nível: números da estação (atual e "+quanto sobe"), x1/x10/x50/Max e "Melhorar"
+function criarBlocoNivel(tipo, i) {
+  const bloco = criar("div", "bloco-nivel", painelLinhas);
+  const linhasStat = statsDoPainel(tipo, i, 0).map(function (s) {
+    const div = criar("div", "stat", bloco);
+    const icone = criar("img", "stat-icone", div);
+    icone.src = "assets/" + s.icone;
+    criar("div", "stat-nome", div).textContent = s.nome;
+    const valores = criar("div", "stat-valores", div);
+    return { atual: criar("div", "stat-atual", valores), mais: criar("div", "stat-mais", valores) };
+  });
+
+  const rodape = criar("div", "rodape-nivel", bloco);
+  const mults = criar("div", "mults", rodape);
+  const botoesMult = [1, 10, 50, 0].map(function (m) {
+    const b = criar("button", "mult", mults);
+    b.textContent = m === 0 ? "Max" : "x" + m;
+    b.addEventListener("click", function () { multiplicador = m; });
+    return { m: m, b: b };
+  });
+  const precoEl = criar("div", "preco-nivel", rodape);
+  const melhorar = criar("button", "melhorar", rodape);
+
+  // Níveis que o botão vai comprar (Max = o que der; no mínimo 1, para mostrar o preço)
+  function quantosNiveis() {
+    if (multiplicador > 0) { return multiplicador; }
+    return Math.max(1, niveisQueDaPraComprar(tipo, i, nivelDe(tipo, i)));
+  }
+
+  melhorar.addEventListener("click", function () {
+    const k = quantosNiveis();
+    const custo = precoNiveis(tipo, i, nivelDe(tipo, i), k);
+    if (dinheiro < custo) { return; }
+    dinheiro = dinheiro - custo;
+    subirNivel(tipo, i, k);
+  });
+
+  blocoNivel = { tipo: tipo, i: i, linhasStat: linhasStat, botoesMult: botoesMult,
+                 precoEl: precoEl, melhorar: melhorar, quantosNiveis: quantosNiveis };
 }
 
 function fecharPainel() {
   painel.classList.add("escondido");
   linhasAbertas = null;
+  blocoNivel = null;
 }
 
 function atualizarPainel() {
@@ -589,6 +669,29 @@ function atualizarPainel() {
       r.botao.disabled = dinheiro < r.l.preco();
     }
   });
+
+  if (!blocoNivel) {
+    trocarTexto(painelTitulo, tituloDoPainel(painelTipo));
+    return;
+  }
+  const b = blocoNivel;
+  const n = nivelDe(b.tipo, b.i);
+  const k = b.quantosNiveis();
+  trocarTexto(painelTitulo, tituloDoPainel(b.tipo, b.i) + " · Nível " + (n + 1));
+
+  const agora = statsDoPainel(b.tipo, b.i, n);
+  const depois = statsDoPainel(b.tipo, b.i, n + k);
+  b.linhasStat.forEach(function (l, pos) {
+    const suf = agora[pos].sufixo || "";
+    trocarTexto(l.atual, formatarStat(agora[pos].v) + suf);
+    trocarTexto(l.mais, "+" + formatarStat(depois[pos].v - agora[pos].v) + suf);
+  });
+
+  b.botoesMult.forEach(function (x) { x.b.classList.toggle("ativo", x.m === multiplicador); });
+  const custo = precoNiveis(b.tipo, b.i, n, k);
+  trocarTexto(b.precoEl, "$" + formatar(custo));
+  trocarTexto(b.melhorar, "Melhorar +" + k);
+  b.melhorar.disabled = dinheiro < custo;
 }
 
 // =====================================================================
@@ -615,17 +718,12 @@ rolarBaixo.addEventListener("click", function () { rolarPara(cameraY + ALTURA_AN
 //  GERENTES: fazem o clique da estação sozinhos
 // =====================================================================
 function automatizar() {
-  // Andares com gerente: um golpe a cada RITMO_GERENTE quadros; com a sacola cheia, manda levar
+  // Andares com gerente: com a sacola cheia, manda levar até a caixa
   andares.forEach(function (a, i) {
-    if (!a.gerente || a.estado !== "cavando") { return; }
-    a.relogio++;
-    if (a.sacola >= capSacola(a) || a.relogio >= RITMO_GERENTE) {
-      a.relogio = 0;
-      clicarAndar(i);
-    }
+    if (a.gerente && a.estado === "cavando" && a.sacola >= capSacola(a)) { clicarAndar(i); }
   });
 
-  // Elevador com gerente: desce sempre que algum andar tem minério esperando
+  // Elevador com gerente: desce sempre que alguma caixa tem minério
   if (gerentes.elevador) { clicarElevador(); } // o próprio clique já confere se pode sair
 
   // Superfície com gerente: o ajudante busca sempre que o depósito tem minério
@@ -669,17 +767,14 @@ let podeSalvar = true; // desligado no "Recomeçar", para não salvar de novo ao
 
 function salvar() {
   if (!podeSalvar) { return; }
-  const niveis = {};
-  for (const id in upgrades) { niveis[id] = upgrades[id].nivel; }
   const dados = {
-    versao: 1,
+    versao: 2,
     dinheiro: dinheiro + elev.carga + aj.carga,
     noDeposito: noDeposito,
-    niveis: niveis,
+    niveis: { elevador: niveis.elevador, superficie: niveis.superficie },
     gerentes: { elevador: gerentes.elevador, superficie: gerentes.superficie },
     andares: andares.map(function (a) {
-      return { mineiros: a.mineiros, sacola: a.sacola, gerente: a.gerente,
-               picareta: a.niveis.picareta, nivelSacola: a.niveis.sacola };
+      return { nivel: a.nivel, mineiros: a.mineiros, sacola: a.sacola, caixa: a.caixa, gerente: a.gerente };
     })
   };
   try { localStorage.setItem(CHAVE_SAVE, JSON.stringify(dados)); } catch (e) { /* sem acesso: segue sem salvar */ }
@@ -689,13 +784,14 @@ function salvar() {
 function carregar() {
   let dados = null;
   try { dados = JSON.parse(localStorage.getItem(CHAVE_SAVE)); } catch (e) { return false; }
-  if (!dados || dados.versao !== 1 || !dados.andares || dados.andares.length === 0) { return false; }
+  if (!dados || (dados.versao !== 1 && dados.versao !== 2) || !dados.andares || dados.andares.length === 0) { return false; }
+  const n = dados.niveis || {};
+  const v1 = dados.versao === 1; // save antigo: níveis separados viram o nível da estação (soma)
 
   dinheiro = dados.dinheiro || 0;
-  for (const id in upgrades) {
-    if (dados.niveis && dados.niveis[id] >= 0) { upgrades[id].nivel = dados.niveis[id]; }
-  }
-  noDeposito = Math.min(dados.noDeposito || 0, valorAtual("deposito"));
+  niveis.elevador = Math.max(0, v1 ? (n.elevador || 0) + (n.velocidade || 0) : (n.elevador || 0));
+  niveis.superficie = Math.max(0, v1 ? (n.deposito || 0) + (n.carrinho || 0) : (n.superficie || 0));
+  noDeposito = Math.max(0, dados.noDeposito || 0);
   gerentes.elevador = !!(dados.gerentes && dados.gerentes.elevador);
   gerentes.superficie = !!(dados.gerentes && dados.gerentes.superficie);
 
@@ -704,10 +800,14 @@ function carregar() {
     const a = andares[andares.length - 1];
     a.mineiros = Math.max(1, Math.min(MAX_MINEIROS, s.mineiros || 1));
     a.gerente = !!s.gerente;
-    // Save antigo (níveis globais): cada andar herda o nível que a mina tinha
-    const antigo = dados.niveis || {};
-    a.niveis.picareta = Math.max(0, s.picareta !== undefined ? s.picareta : (antigo.picareta || 0));
-    a.niveis.sacola = Math.max(0, s.nivelSacola !== undefined ? s.nivelSacola : (antigo.sacola || 0));
+    if (v1) {
+      const pic = s.picareta !== undefined ? s.picareta : (n.picareta || 0);
+      const sac = s.nivelSacola !== undefined ? s.nivelSacola : (n.sacola || 0);
+      a.nivel = Math.max(0, pic + sac);
+    } else {
+      a.nivel = Math.max(0, s.nivel || 0);
+      a.caixa = Math.max(0, s.caixa || 0);
+    }
     a.sacola = Math.min(s.sacola || 0, capSacola(a));
   });
   return true;

@@ -150,7 +150,57 @@ body {
 .balao.laranja { background: #ffb066; }
 .balao.vermelho { background: #e5533d; color: #ffffff; }
 
-.andar .balao { top: 50px; }
+/* Caixa do andar (beira do poço) e o balão com quanto tem nela */
+.caixa {
+  position: absolute;
+  left: 282px;
+  top: 172px;
+  width: 64px;
+  height: 50px;
+  z-index: 2;
+}
+
+.andar .balao-caixa { left: 314px; top: 140px; }
+
+/* Barra de progresso da sacola (em cima dos mineiros; left definido pelo game.js) */
+.barra {
+  position: absolute;
+  top: 50px;
+  width: 96px;
+  height: 22px;
+  transform: translateX(-50%);
+  background: #ffffff;
+  border: 3px solid #222;
+  border-radius: 12px;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.barra-cheia {
+  height: 100%;
+  width: 0;
+  background: #f7c21b;
+}
+
+.barra-texto {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 900;
+  color: #222;
+}
+
+/* Sacola cheia: pisca para chamar o clique */
+.barra.cheia { animation: piscar 0.8s infinite; }
+
+@keyframes piscar {
+  0%, 100% { border-color: #222; }
+  50%      { border-color: #e5533d; }
+}
 
 /* ===================== Superfície ===================== */
 #fabrica {
@@ -478,3 +528,103 @@ body {
 }
 
 #recomecar:hover { opacity: 1; }
+
+/* ===================== Painel: bloco de nível ===================== */
+/* Números da estação (atual e quanto sobe) + x1/x10/x50/Max + "Melhorar" */
+.bloco-nivel {
+  margin-top: 10px;
+  padding: 6px 8px 8px;
+  background: #ffffff;
+  border: 3px solid #222;
+  border-radius: 12px;
+}
+
+.stat {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 0;
+  border-bottom: 2px solid #eee2b8;
+}
+
+.stat-icone {
+  width: 34px;
+  height: 30px;
+  object-fit: contain;
+}
+
+.stat-nome {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.stat-valores { text-align: right; }
+
+.stat-atual {
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.stat-mais {
+  font-size: 13px;
+  font-weight: 900;
+  color: #3e9a24;
+}
+
+.rodape-nivel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.mults {
+  display: flex;
+  border: 3px solid #222;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.mult {
+  padding: 6px 7px;
+  border: none;
+  border-right: 2px solid #222;
+  background: #fff3c4;
+  font-size: 13px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.mult:last-child { border-right: none; }
+.mult.ativo { background: #f7c21b; }
+
+.preco-nivel {
+  flex: 1;
+  text-align: right;
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.melhorar {
+  height: 40px;
+  padding: 0 10px;
+  border: 3px solid #222;
+  border-radius: 10px;
+  box-shadow: 0 3px 0 #222;
+  background: #5cb83a;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.melhorar:active { transform: translateY(3px); box-shadow: none; }
+
+.melhorar:disabled {
+  background: #c9c9c9;
+  color: #666666;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: 0 3px 0 #222;
+}
