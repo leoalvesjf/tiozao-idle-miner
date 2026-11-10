@@ -32,18 +32,22 @@ function topoAndar(i) { return ALTURA_SUPERFICIE + i * ALTURA_ANDAR; }
 function yCabineNoAndar(i) { return topoAndar(i) + 114; } // piso da cabine no chão do andar
 
 // ===== Níveis das estações (regra da proporção) =====
-// Cada nível: os números da estação sobem ×CRESCE e o preço do próximo nível sobe ×PRECO_CRESCE.
-// Todos os números de balanceamento ficam aqui, para o simulador ajustar depois.
-const CRESCE = 1.1;          // +10% por nível
-const PRECO_CRESCE = 1.12;   // +12% de preço por nível
+// Números do balanceamento (testados no simulador: ferramentas/simulador.js, em 2026-11-10).
+// Andar: produção +6% por nível. Elevador e carrinho: carga +16% por nível (mesmo ritmo do preço).
+// Cada andar mais fundo: minério, sacola e preços ×PISO. Abrir andar: ×PRECO_ANDAR.
+const PISO = 5;               // andar mais fundo vale ×5
+const CRESCE_ANDAR = 1.06;    // +6% de produção por nível
+const CRESCE_TRANSP = 1.16;   // +16% de carga por nível (elevador e carrinho)
+const PRECO_CRESCE = 1.16;    // +16% de preço por nível
+const PRECO_ANDAR = 12;       // abrir o próximo andar custa ×12
 
 const estacoes = {
   andar: {
-    precoBase: function (i) { return 10 * 5 ** i; },          // andar mais fundo = mais caro
+    precoBase: function (i) { return 10 * PISO ** i; },        // andar mais fundo = mais caro
     stats: function (n, i) {
       return [
-        { nome: "Minério por golpe", icone: "pedra-minerio.svg", v: (i + 1) * CRESCE ** n },
-        { nome: "Sacola por mineiro", icone: "sacola.svg", v: 10 * CRESCE ** n }
+        { nome: "Minério por golpe", icone: "pedra-minerio.svg", v: 2 * PISO ** i * CRESCE_ANDAR ** n },
+        { nome: "Sacola por mineiro", icone: "sacola.svg", v: 20 * PISO ** i * CRESCE_ANDAR ** n }
       ];
     }
   },
@@ -51,7 +55,7 @@ const estacoes = {
     precoBase: function () { return 20; },
     stats: function (n) {
       return [
-        { nome: "Carga", icone: "elevador-cheio.svg", v: 20 * CRESCE ** n },
+        { nome: "Carga", icone: "elevador-cheio.svg", v: 40 * CRESCE_TRANSP ** n },
         { nome: "Velocidade", icone: "elevador-vazio.svg", v: 100 * 1.03 ** n, sufixo: "%" }
       ];
     }
@@ -60,7 +64,7 @@ const estacoes = {
     precoBase: function () { return 15; },
     stats: function (n) {
       return [
-        { nome: "Carga do carrinho", icone: "ajudante-andando-cheio-1.svg", v: 10 * CRESCE ** n },
+        { nome: "Carga do carrinho", icone: "ajudante-andando-cheio-1.svg", v: 20 * CRESCE_TRANSP ** n },
         { nome: "Velocidade", icone: "ajudante-parado.svg", v: 100 * 1.03 ** n, sufixo: "%" }
       ];
     }
@@ -97,15 +101,15 @@ function capCarrinho() { return Math.floor(stat("superficie", 0, 0)); }
 function velAjudante() { return VEL_AJUDANTE * stat("superficie", 0, 1) / 100; }
 
 // Contratar mineiro no andar i: 50 × 2^(mineiros-1) × 5^i
-function precoMineiro(i) { return Math.floor(50 * 2 ** (andares[i].mineiros - 1) * 5 ** i); }
-// Abrir o próximo andar: 100, 1.000, 10.000...
-function precoNovoAndar() { return 100 * 10 ** (andares.length - 1); }
+function precoMineiro(i) { return Math.floor(50 * 2 ** (andares[i].mineiros - 1) * PISO ** i); }
+// Abrir o próximo andar: 100, 1.200, 14.400... (×PRECO_ANDAR)
+function precoNovoAndar() { return 100 * PRECO_ANDAR ** (andares.length - 1); }
 
 // Gerentes (opção A: só automatizam). Superfície 100, elevador 150, andar N: 75 × 5^(N-1)
 function precoGerente(tipo, i) {
   if (tipo === "superficie") { return 100; }
   if (tipo === "elevador") { return 150; }
-  return 75 * 5 ** i;
+  return 75 * PISO ** i;
 }
 
 // ===== Estado do jogo =====
@@ -535,7 +539,7 @@ function linhasDoPainel(tipo, i) {
   return [{
     icone: "pedra-minerio.svg",
     nome: function () { return "Abrir andar " + (andares.length + 1); },
-    valor: function () { return "Minério vale ×" + (andares.length + 1); },
+    valor: function () { return "Minério vale ×" + formatar(PISO ** andares.length); },
     preco: precoNovoAndar,
     max: function () { return andares.length >= MAX_ANDARES; },
     comprar: function () {
