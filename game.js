@@ -149,7 +149,18 @@ const painelTitulo = document.getElementById("painel-titulo");
 const painelLinhas = document.getElementById("painel-linhas");
 
 // ===== Utilidades =====
-function formatar(n) { return Math.floor(n).toLocaleString("pt-BR"); }
+// Abaixo de 10 mil mostra inteiro (9.999); acima abrevia: 12,5K · 2,07M · 3,4B · 1,2T
+const SUFIXOS = ["", "K", "M", "B", "T", "Qa", "Qi"];
+function formatar(n) {
+  n = Math.floor(n);
+  if (n < 10000) { return n.toLocaleString("pt-BR"); }
+  let s = 0;
+  while (n >= 1000 && s < SUFIXOS.length - 1) { n = n / 1000; s++; }
+  const casas = n < 10 ? 2 : (n < 100 ? 1 : 0);
+  const corte = 10 ** casas;
+  const v = Math.floor(n * corte) / corte; // corta para baixo: nunca mostra mais do que tem
+  return v.toLocaleString("pt-BR", { maximumFractionDigits: casas }) + SUFIXOS[s];
+}
 // Números do painel: 1 casa decimal quando é pequeno e quebrado (ex.: 1,1)
 function formatarStat(n) {
   if (n < 100 && Math.abs(n - Math.round(n)) > 0.05) {
